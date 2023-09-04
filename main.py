@@ -201,8 +201,8 @@ nombres_patologias = [
 ]
 
 # Cargar el modelo
-modelo = joblib.load("./Regresion_pat_def.pkl")
-probabilidad = joblib.load("./ProbAltaDefEdad.pkl")
+modelo = joblib.load("/home/ubuntu/mlapi/Regresion_pat_def.pkl")
+probabilidad = joblib.load("/home/ubuntu/mlapi/ProbAltaDefEdad.pkl")
 
 
 @app.post("/predecir/")
