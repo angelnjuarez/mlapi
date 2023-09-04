@@ -267,7 +267,7 @@ def predecir_egreso(edades: List[int]):
     df = pd.DataFrame(data)
 
         # Crear el gráfico de tabla
-    fig, ax = plt.subplots(figsize=(9, 2))
+    fig, ax = plt.subplots(figsize=(9, 2), dpi=200)
     ax.axis('off')
     table_data = [df.columns] + df.values.tolist()
     table = ax.table(cellText=table_data,
