@@ -230,7 +230,7 @@ def predecir_valores(codPatologias: List[int]):
     result_df = pd.merge(true_counts, total_counts, on="Enfermedad", how="left")
 
     # Convertir la tabla en una imagen
-    plt.figure(figsize=(9, 2))
+    plt.figure(figsize=(9, 2), dpi=300)
     plt.axis("off")
     plt.table(
         cellText=result_df.values,
@@ -267,7 +267,7 @@ def predecir_egreso(edades: List[int]):
     df = pd.DataFrame(data)
 
         # Crear el gráfico de tabla
-    fig, ax = plt.subplots(figsize=(9, 2), dpi=200)
+    fig, ax = plt.subplots(figsize=(9, 2), dpi=300)
     ax.axis('off')
     table_data = [df.columns] + df.values.tolist()
     table = ax.table(cellText=table_data,
