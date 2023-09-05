@@ -12,7 +12,7 @@ app = FastAPI()
 # Configurar el middleware CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Link a la aplicación React
+    allow_origins=["http://localhost:3000", "https://grupo8-egresoshospitalarios.s3.us-east-2.amazonaws.com"],  # Link a la aplicación React
     allow_credentials=True,
     allow_methods=["*"],  # Esto permite todos los métodos (GET, POST, etc.)
     allow_headers=["*"],  # Esto permite todos los encabezados
