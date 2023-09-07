@@ -1,254 +1,182 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import joblib
+from typing import List
+import io
+import json
 import pandas as pd
 import matplotlib.pyplot as plt
-from io import BytesIO
+import plotly.graph_objects as go
+import plotly.io as pio
+import seaborn as sns
+import joblib
 import base64
-from typing import List
+
 
 app = FastAPI()
 
 # Configurar el middleware CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://grupo8-egresoshospitalarios.s3.us-east-2.amazonaws.com"],  # Link a la aplicación React
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],  # Esto permite todos los métodos (GET, POST, etc.)
     allow_headers=["*"],  # Esto permite todos los encabezados
 )
 
-codigos_patologias = [
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    7,
-    8,
-    9,
-    10,
-    11,
-    12,
-    13,
-    14,
-    15,
-    16,
-    17,
-    18,
-    19,
-    20,
-    21,
-    22,
-    23,
-    24,
-    25,
-    26,
-    27,
-    28,
-    29,
-    30,
-    31,
-    32,
-    33,
-    34,
-    35,
-    36,
-    37,
-    38,
-    39,
-    40,
-    41,
-    42,
-    43,
-    44,
-    45,
-    46,
-    47,
-    48,
-    49,
-    50,
-    51,
-    52,
-    53,
-    54,
-    55,
-    56,
-    57,
-    58,
-    59,
-    60,
-    61,
-    62,
-    63,
-    64,
-    65,
-    66,
-    67,
-    68,
-    69,
-    70,
-    71,
-    72,
-    73,
-    74,
-    75,
-    76,
-    77,
-    78,
-    79,
-    80,
-    81,
-    82,
-    83,
-    84,
-    85,
-    86,
-    87,
-    88,
-]
 
-nombres_patologias = [
-    "aborto",
-    "af perinatales",
-    "asma",
-    "bronquitis/ bronquiolitis aguda",
-    "causas obtétricas indirec",
-    "chagas",
-    "colelitiasis/colecistitis",
-    "compl at medica/quirúrgica",
-    "compl embarazo",
-    "compl parto",
-    "compl puerperio",
-    "covid-19",
-    "def nutricionales",
-    "dengue",
-    "diabetes",
-    "ecv",
-    "enf apéndice",
-    "enf crónica vri",
-    "enf hipertensivas",
-    "enf hígado",
-    "enf infecciosas intestinales",
-    "enf oido/ ap mastoides",
-    "enf ojos",
-    "enf piel/ tcs",
-    "enf páncreas",
-    "enf sangre/ org hematopoyético",
-    "enf sist osteomuscular",
-    "enf sist urinario",
-    "enteritis/ colitis no infecciosa",
-    "envenenamiento/ tóxico",
-    "epilepsia",
-    "epoc",
-    "fac que influyen en la salud/ contacto con serv salud",
-    "hallazgos clínicos/ laboratorio anormales",
-    "hepatitis virales",
-    "hernias",
-    "hiperplasia próstata",
-    "iam",
-    "influenza/ neumonía",
-    "ira sup",
-    "its",
-    "leucemia",
-    "malf congénitas",
-    "meningitis bacteriana",
-    "meningitis viral",
-    "obesidad",
-    "otras afec obstétricas",
-    "otras causas externas",
-    "otras enf cardíacas",
-    "otras enf de vrs",
-    "otras enf del peritoneo",
-    "otras enf endócrinas/ metabólicas",
-    "otras enf infecciosas/ parasitarias",
-    "otras enf sist circulatorio",
-    "otras enf sist digestivo",
-    "otras enf sist genitourinario",
-    "otras enf sist nervioso",
-    "otras enf sist respiratorio",
-    "otras ira inferiores",
-    "otros trastornos mentales",
-    "otros tumores malignos",
-    "parotiditis infecciosa",
-    "parto",
-    "quemadura/ congelamiento",
-    "salpingitis/ ooforitis",
-    "sarampión",
-    "sec causas ext",
-    "septicemias",
-    "t cabeza/ cuello",
-    "t mmss y mmii",
-    "t múltiples",
-    "t tórax/ abdomen/ lumbopelvis",
-    "tos ferina",
-    "trast por alcohol",
-    "trast tiroides",
-    "tuberculosis",
-    "tumor genitales fem",
-    "tumor genitales masc",
-    "tumor in situ/ benigno",
-    "tumor mama",
-    "tumor org digestivos",
-    "tumor org intratoráxicos",
-    "tumor org urinario",
-    "tumor próstata",
-    "tumor útero",
-    "ulcera gástrica/ duodenal",
-    "varicela",
-    "vih",
-]
+# Cargar los modelos
+modelo = joblib.load("./Modelos/Regresion_pat_def.pkl")
+probabilidad = joblib.load("./Modelos/ProbAltaDefEdad.pkl")
 
-# Cargar el modelo
-modelo = joblib.load("./Regresion_pat_def.pkl")
-probabilidad = joblib.load("./ProbAltaDefEdad.pkl")
+# Diccionario de patologías
+patologias_dict: [int, str] = {
+    1: "aborto",
+    2: "af perinatales",
+    3: "asma",
+    4: "bronquitis/ bronquiolitis aguda",
+    5: "causas obtétricas indirec",
+    6: "chagas",
+    7: "colelitiasis/colecistitis",
+    8: "compl at medica/quirúrgica",
+    9: "compl embarazo",
+    10: "compl parto",
+    11: "compl puerperio",
+    12: "covid-19",
+    13: "def nutricionales",
+    14: "dengue",
+    15: "diabetes",
+    16: "ecv",
+    17: "enf apéndice",
+    18: "enf crónica vri",
+    19: "enf hipertensivas",
+    20: "enf hígado",
+    21: "enf infecciosas intestinales",
+    22: "enf oido/ ap mastoides",
+    23: "enf ojos",
+    24: "enf piel/ tcs",
+    25: "enf páncreas",
+    26: "enf sangre/ org hematopoyético",
+    27: "enf sist osteomuscular",
+    28: "enf sist urinario",
+    29: "enteritis/ colitis no infecciosa",
+    30: "envenenamiento/ tóxico",
+    31: "epilepsia",
+    32: "epoc",
+    33: "fac que influyen en la salud/ contacto con serv salud",
+    34: "hallazgos clínicos/ laboratorio anormales",
+    35: "hepatitis virales",
+    36: "hernias",
+    37: "hiperplasia próstata",
+    38: "iam",
+    39: "influenza/ neumonía",
+    40: "ira sup",
+    41: "its",
+    42: "leucemia",
+    43: "malf congénitas",
+    44: "meningitis bacteriana",
+    45: "meningitis viral",
+    46: "obesidad",
+    47: "otras afec obstétricas",
+    48: "otras causas externas",
+    49: "otras enf cardíacas",
+    50: "otras enf de vrs",
+    51: "otras enf del peritoneo",
+    52: "otras enf endócrinas/ metabólicas",
+    53: "otras enf infecciosas/ parasitarias",
+    54: "otras enf sist circulatorio",
+    55: "otras enf sist digestivo",
+    56: "otras enf sist genitourinario",
+    57: "otras enf sist nervioso",
+    58: "otras enf sist respiratorio",
+    59: "otras ira inferiores",
+    60: "otros trastornos mentales",
+    61: "otros tumores malignos",
+    62: "parotiditis infecciosa",
+    63: "parto",
+    64: "quemadura/ congelamiento",
+    65: "salpingitis/ ooforitis",
+    66: "sarampión",
+    67: "sec causas ext",
+    68: "septicemias",
+    69: "t cabeza/ cuello",
+    70: "t mmss y mmii",
+    71: "t múltiples",
+    72: "t tórax/ abdomen/ lumbopelvis",
+    73: "tos ferina",
+    74: "trast por alcohol",
+    75: "trast tiroides",
+    76: "tuberculosis",
+    77: "tumor genitales fem",
+    78: "tumor genitales masc",
+    79: "tumor in situ/ benigno",
+    80: "tumor mama",
+    81: "tumor org digestivos",
+    82: "tumor org intratoráxicos",
+    83: "tumor org urinario",
+    84: "tumor próstata",
+    85: "tumor útero",
+    86: "ulcera gástrica/ duodenal",
+    87: "varicela",
+    88: "vih",
+}
 
 
-@app.post("/predecir/")
-def predecir_valores(codPatologias: List[int]):
+@app.get("/listapatologias/")
+def get_patologias():
+    patologias_json = json.dumps(patologias_dict)
+
+    return patologias_json
+
+
+@app.get("/predecirdefunciones/")
+def pred_egreso(codPatologias: List[int]):
     # Crear un dataframe con los valores recibidos
     features = pd.DataFrame({"causa_egreso": codPatologias})
 
     # Realizar la predicción
     prediccion = modelo.predict(features)
 
-    # Crear una tabla con valores input y predicciones
+    # Creamos un dataframe y reemplazamos los códigos por los nombres de las patologías
     data = {"Enfermedad": codPatologias, "Predicción": prediccion}
     df = pd.DataFrame(data)
+    df["Enfermedad"] = df["Enfermedad"].replace(patologias_dict)
 
-    df["Enfermedad"] = df["Enfermedad"].replace(codigos_patologias, nombres_patologias)
+    # Calcular total de defunciones por enfermedad y total de casos
+    def_counts = df.groupby("Enfermedad")["Predicción"].sum().reset_index()
+    enf_counts = df["Enfermedad"].value_counts().reset_index()
+    enf_counts.columns = ["Enfermedad", "Total Casos"]
+    result_df = pd.merge(def_counts, enf_counts, on="Enfermedad", how="left")
 
-    # Calcular la cantidad de True para cada número de enfermedad
-    true_counts = df.groupby("Enfermedad")["Predicción"].sum().reset_index()
+    return result_df
 
-    # Calcular el total de cada número de enfermedad
-    total_counts = df["Enfermedad"].value_counts().reset_index()
-    total_counts.columns = ["Enfermedad", "Total"]
 
-    # Combinar ambas columnas
-    result_df = pd.merge(true_counts, total_counts, on="Enfermedad", how="left")
+@app.post("/predecir/")
+def graf_egreso(codPatologias: List[int]):
+    # Obtener el dataframe con la predicción
+    result_df = pred_egreso(codPatologias)
+    df = pd.DataFrame(result_df, columns=["Enfermedad", "Predicción", "Total Casos"])
 
-    # Convertir la tabla en una imagen
-    plt.figure(figsize=(9, 2), dpi=100)
-    plt.axis("off")
-    plt.table(
-        cellText=result_df.values,
-        colLabels=["Enfermedad", "Defunciones", "Casos"],
-        cellLoc="center",
-        loc="center",
-        colColours=["lightblue", "yellow", "lightgreen"],
+    # Crear un gráfico de tabla utilizando seaborn y matplotlib
+    plt.figure(figsize=(6, 3), dpi=100)
+    sns.set(font_scale=0.8)
+    sns.heatmap(
+        df.pivot_table(index="Enfermedad", aggfunc="sum"),
+        annot=True,
+        fmt="g",
+        cmap="Blues",
     )
 
-    img_buffer = BytesIO()
-    plt.savefig(img_buffer, format="png", bbox_inches="tight", pad_inches=0.2)
-    img_buffer.seek(0)
-    img_base64 = base64.b64encode(img_buffer.read()).decode()
+    # Convertir la figura a una cadena base64
+    img_bytes = io.BytesIO()
+    plt.savefig(img_bytes, format='png', bbox_inches="tight")
+    img_bytes.seek(0)
+    img_base64 = base64.b64encode(img_bytes.read()).decode()
 
     return img_base64
 
-@app.post("/probabilidad/")
-def predecir_egreso(edades: List[int]):
+
+@app.get("/probabilidadaltadefuncion/")
+def calc_probabilidad(edades: List[int]):
     # Crear un dataframe con los valores recibidos
     features = pd.DataFrame({"grupo_edad": edades})
 
@@ -263,28 +191,53 @@ def predecir_egreso(edades: List[int]):
         probabilidad_defuncion.append(prediccion[i][1] * 100)
 
     # Crear una tabla con valores input y predicciones
-    data = {"Edad": edades,"Probabilidad Alta": probabilidad_alta, "Probabilidad Defunción": probabilidad_defuncion}
+    data = {
+        "Edad": edades,
+        "Probabilidad Alta": probabilidad_alta,
+        "Probabilidad Defunción": probabilidad_defuncion,
+    }
     df = pd.DataFrame(data)
 
-        # Crear el gráfico de tabla
-    fig, ax = plt.subplots(figsize=(9, 2), dpi=100)
-    ax.axis('off')
-    table_data = [df.columns] + df.values.tolist()
-    table = ax.table(cellText=table_data,
-                     cellLoc='center',
-                     loc='center',
-                     colColours=["lightblue"] * 3 + ["lightgreen"] * 3)
+    return df
 
-    # Estilo para la tipografía en negrita (bold) y celdas grises (grey)
-    for i, cell in enumerate(table._cells.values()):
-        cell.set_text_props(weight='bold')
-        if i > 2:  # Saltar las primeras tres celdas que son encabezados
-            cell.set_facecolor("lightgrey")
 
-    img_buffer = BytesIO()
-    plt.savefig(img_buffer, format="png", bbox_inches="tight", pad_inches=0.2)
-    img_buffer.seek(0)
-    img_base64 = base64.b64encode(img_buffer.read()).decode()
+@app.post("/probabilidad/")
+def graf_probabilidad(edades: List[int]):
+    df = calc_probabilidad(edades)
+    data = [
+        go.Table(
+            header=dict(
+                values=list(df.columns),
+                fill_color="lightblue",
+                align="center",
+                font=dict(color="black", size=14,),
+                line=dict(color='black', width=1),
+                height=40,
 
-    return img_base64
+            ),
+            cells=dict(
+                values=[df[col] for col in df.columns],
+                fill=dict(color="lightgrey"),
+                line=dict(color='black', width=1),
+                align="center",
+                font=dict(color="black", size=14, ),
+                height=40,
+            ),
+        )
+    ]
 
+    num_filas = len(df)
+    num_columnas = len(df.columns)
+    ancho = num_columnas * 220
+    altura = num_filas * 40
+
+    layout = go.Layout(width=ancho, height=altura, autosize=False)
+    fig = go.Figure(data=data, layout=layout)
+
+    fig.update_layout(margin=dict(l=0, r=0, t=0, b=0),
+                      yaxis=dict(fixedrange=False, showgrid=False),)
+
+    fig_bytes = pio.to_image(fig, format="png")
+    fig_base64 = base64.b64encode(fig_bytes).decode("utf-8")
+
+    return fig_base64
