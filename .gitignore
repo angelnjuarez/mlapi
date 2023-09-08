@@ -1,0 +1,40 @@
+# Archivos generados por el sistema operativo
+.DS_Store
+
+# Archivos generados por el entorno de desarrollo de Python
+__pycache__/
+
+# Archivos generados por la ejecución de código
+*.pyc
+*.pyo
+
+# Directorio de entorno virtual de Python (si lo utilizas)
+venv/
+
+# Archivos generados por herramientas de construcción
+/dist/
+/node_modules/
+
+# Directorio de caché de Jupyter Notebook (si lo utilizas)
+.ipynb_checkpoints/
+
+# Archivos generados por herramientas de construcción de Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Archivos generados por herramientas de construcción de Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Carpeta donde se almacenan los logs y archivos temporales (puede variar)
+logs/
+temp/
+
+# Archivos generados por IDEs o editores de código
+.vscode/
+.idea/
+
+# Archivo de configuración local de tu entorno (si se utiliza)
+.env
